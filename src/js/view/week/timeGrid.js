@@ -247,10 +247,11 @@ TimeGrid.prototype._getHourmarkerViewModel = function(now, grids, range) {
     var hourmarkerTimzones = [];
     var opt = this.options;
     var primaryOffset = Timezone.getOffset();
+    var diffOffset = Timezone.getTimezoneOffset() - Timezone.getCustomTimezoneOffset();
     var timezones = opt.timezones;
     var viewModel;
 
-    now = now || new TZDate();
+    now = new TZDate(now + diffOffset);
 
     util.forEach(range, function(date, index) {
         if (datetime.isSameDate(now, date)) {
@@ -296,6 +297,7 @@ TimeGrid.prototype._getHourmarkerViewModel = function(now, grids, range) {
 TimeGrid.prototype._getTimezoneViewModel = function(currentHours, timezonesCollapsed, styles) {
     var opt = this.options;
     var primaryOffset = Timezone.getOffset();
+    var diffOffset = Timezone.getTimezoneOffset() - Timezone.getCustomTimezoneOffset();
     var timezones = opt.timezones;
     var timezonesLength = timezones.length;
     var timezoneViewModel = [];
@@ -303,6 +305,8 @@ TimeGrid.prototype._getTimezoneViewModel = function(currentHours, timezonesColla
     var width = collapsed ? 100 : 100 / timezonesLength;
     var now = new TZDate();
     var backgroundColor = styles.displayTimezoneLabelBackgroundColor;
+
+    now = new TZDate(now + diffOffset);
 
     util.forEach(timezones, function(timezone, index) {
         var hourmarker = new TZDate(now);

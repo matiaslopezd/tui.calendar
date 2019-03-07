@@ -5,7 +5,8 @@
 'use strict';
 
 var MIN_TO_MS = 60 * 1000;
-var customOffsetMs = getTimezoneOffset();
+var SYSTEM_OFFSET_MS = getTimezoneOffset();
+var customOffsetMs = SYSTEM_OFFSET_MS;
 var timezoneOffsetCallback = null;
 var setByTimezoneOption = false;
 
@@ -17,7 +18,8 @@ var getterMethods = [
     'getMilliseconds',
     'getMinutes',
     'getMonth',
-    'getSeconds'
+    'getSeconds',
+    'getTime'
 ];
 
 var setterMethods = [
@@ -29,6 +31,15 @@ var setterMethods = [
     'setMonth',
     'setSeconds'
 ];
+
+/**
+ * Calculate diff milliseconds for DST. Subtract the firstly loaded timezoneOffset and specific date timezoneOffset.
+ * @param {number} time milliseconds
+ * @returns {number} dst diff 
+ */
+function getDSTDiff(time) {
+    return getTimezoneOffset(time) - SYSTEM_OFFSET_MS;
+}
 
 /**
  * Get the timezone offset by timestampe
@@ -58,14 +69,18 @@ function getCustomTimezoneOffset(timestamp) {
 
 /**
  * Create a Date instance with multiple arguments
- * @param {Array} args - arguments
+ * @param {Array} args - arguments ['2019', '2', '1']
  * @returns {Date}
  * @private
  */
 function createDateWithMultipleArgs(args) {
-    var utc = Date.UTC.apply(null, args);
+    var time = Date.UTC.apply(null, args);
+    var timezoneOffset = getTimezoneOffset(time);
+    var diffDST = getDSTDiff(time);
+    var localizedTime = time + timezoneOffset - diffDST;
+    var localizedDate = new Date(localizedTime);
 
-    return new Date(utc + getTimezoneOffset(utc));
+    return localizedDate;
 }
 
 /**
@@ -89,7 +104,7 @@ function createDateWithSingleArg(arg) {
         throw new Error('Invalid Type');
     }
 
-    return new Date(time - getCustomTimezoneOffset(time) + getTimezoneOffset(time));
+    return new Date(time);
 }
 
 /**
@@ -112,16 +127,6 @@ function TZDate() {
 
     this._date = date;
 }
-
-/**
- * Get milliseconds which is converted by timezone
- * @returns {number} milliseconds
- */
-TZDate.prototype.getTime = function() {
-    var time = this._date.getTime();
-
-    return time + getCustomTimezoneOffset(time) - getTimezoneOffset(time);
-};
 
 /**
  * toUTCString
@@ -188,6 +193,9 @@ module.exports = {
 
         return 0;
     },
+
+    getTimezoneOffset: getTimezoneOffset,
+    getCustomTimezoneOffset: getCustomTimezoneOffset,
 
     /**
      * Set a callback function to get timezone offset by timestamp
